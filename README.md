@@ -1,5 +1,5 @@
 # SALAR
-SALAR Mechanism Synthesizer
+### SALAR Mechanism Synthesizer
 
 SALAR is an open-source software tool written in Matlab for four-bar mechanism synthesis and distributed under the MIT License. It has been developed by the research groups SAL (Supercomputación - Algoritmos, Spanish for High-performance Computing and Algorithms) and ARM (Automatic Control, Robotics and Mechatronics), from the University of Almería, Spain. The name of SALAR comes from combining those of both groups, and it also happens to be a word in Spanish (salt pan) that refers to some zones in Almería. The software package can be found in: (Not available until acceptance. Attached copy to the reviewers), and it is linked to the paper in [5].
 
