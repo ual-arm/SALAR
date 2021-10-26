@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en"><head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>SALAR Mechanism Synthesizer</title>
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	</head>
+	<body>
+		<div class="container">
+			<h1>SALAR Mechanism Synthesizer</h1>
+			<h2><u>1.- Overview</u></h2>
+			<p>
+				SALAR is an open-source software tool written in Matlab for four-bar mechanism synthesis and distributed under the <a href="https://en.wikipedia.org/wiki/MIT_License">MIT License</a>. It has been developed by the research groups <a href="https://sites.google.com/ual.es/hpca">SAL</a> (<i>Supercomputación - Algoritmos</i>, Spanish for High-performance Computing and Algorithms) and <a href="https://arm.ual.es/arm-group/">ARM</a> (Automatic Control, Robotics and Mechatronics), from the University of Almería, Spain. The name of SALAR comes from combining those of both groups, and it also happens to be a word in Spanish (<a href="https://en.wikipedia.org/wiki/Salt_pan_(geology)">salt pan</a>) that refers to some zones in Almería. The software package can be found in:  <a href="#"><i>(Not available until acceptance. Attached copy to the reviewers)</i></a>, and it is linked to the paper in [5].
+			</p>
+			<div class="figure">
+				<a href="https://sites.google.com/ual.es/hpca"><img src="img\LogoSal.png" alt="SAL logo (left)" title="Goto SAL webpage" width="10%" style="min-width: 100px;"></a>
+				<a href="https://arm.ual.es/arm-group/"><img src="img\LogoARM.jpg" alt="ARM logo (right)" title="Goto ARM webpage" width="10%" style="min-width: 170px;"></a>
+			</div>
+			<p><b>SALAR features:</b></p>
+			<ul>
+				<li>A simple but powerful graphical user interface (<u>GUI</u>)</li>
+				<li><u>Problem saving and restoring</u> as plain Matlab Workspaces (.MAT files)</li>
+				<li>Two error estimation metrics for optimization:
+					<ol>
+						<li><u>Absolute error:</u> Direct point-to-point comparison between the vertexes of the target path and that achieved by computing the cuadratic error of their coordinates.</li>
+						<li><u>Normalized Shape-Descriptor Vector (NSDV) error:</u> Comparison between the shape of the target path and that achieved by computing the Euclidean of their NSDV vectors, a new shape encoding methodology included in this tool [5].</li>
+					</ol>
+				</li>
+				<li>Four state-of-the-art optimization methods avaiable:
+					<ol>
+						<li><u>FMinCon's Interior-Point (FMC):</u> The popular method provided by the Matlab's Optimization Toolbox [1]. <b><u>Note:</u></b> This option is not available without a valid license of the referred toolbox.</li>
+						<li><u>Teaching-Learning-based Optimization (TLBO):</u> A recent and simple-to-configure stochastic and population-based meta-heuristic [2].</li>
+						<li><u>Differential Evolution (DE):</u> A widely-used stochastic and population-based meta-heuristic with multiple configuration options [3].</li>
+						<li><u>Málaga University Mechanism Synthesis Algorithm (MUMSA):</u> A recent population-based meta-heuristic specially designed for mechanism synthesis built upon Differential Evolution [4].</li>
+					</ol>
+				</li>
+				<li><u>Contest between optimizers:</u> The same problem can be solved by all the optimizers to automatically choose the most promising result.</li>
+				<li><u>Detailed optimization log</u> including average results, standard deviation runtime.</li>
+				<li><u>Cooperation/hybridization between optimizers</u>: The current result can be provided to FMC as its initial point, which might improve the results. The referred current result can come either from a previous optimization contest or from the literature.</li>
+				<li><u>Kinematic analysis:</u> The mechanisms can be simulated to collect the velocities and accelerations of their points of interest as well as those of all their links.</li>
+			</ul>
+			<p>
+  				Figure 1 shows SALAR after successfully solving a mechanism synthesis problem. As can be seen, the target path has been replicated almost perfectly.
+  			</p>
+  			<div class="figure">
+				<img src="img\SALAR_Overview.png" alt="SALAR GUI overview" title="SALAR after having finished a problem resolution process" width="55%" style="min-width: 600px; border: 1px solid;">
+				<br><br>
+				<b>Figure 1.-</b> Screenshot of SALAR after having solved a problem.
+			</div>
+			<h2><u>2.- Code description</u></h2>
+			<p>
+				The SALAR software package consists of 20 files: 15 Matlab code files (.m), 1 Matlab Application file with the GUI (.mlapp), 2 image files used by the GUI (.png and .jpg), and 2 folders. That called "InputOuput" is reserved for storing problem definitions and results for convenience. By default, it comes with the configuration files used in the paper describing SALAR [5]. That called "Optimizers" contains a sub-folder with the implementation of every stocastic population-based optimization method. Notice that they all can be used as general-purpose methods out of the SALAR framework. Figure 2 shows a folder with the expected appeareance of the source code pack after it is downloaded.
+			</p>
+			<div class="figure">
+				<img src="img\SALAR_Folder.png" alt="SALAR source code folder" title="Overview of the folder with the SALAR source code" width="35%" style="min-width: 600px; border: 1px solid;">
+				<br><br>
+				<b>Figure 2.-</b> Screenshot of the folder containing the code of SALAR.
+			</div>
+			<p>
+				The structure, scope and utility of every ".m" source file, in alphabetical order, is outlined below:
+			</p>
+			<ol>
+				<li><u>armored_obj_func.m:</u> Objective function used by the stochastic population-based optimizers and by FMC when no initial point is given to it. The function gets as input the candidate solution, i.e., a vector of parameters, and a structure defining the optimization context, i.e., problem type, search bounds... The function will compute either the absolute or the NSDV error depending on the problem context. Regardless, the function is specially designed for detecting and penalizing infeasibility gradually. For instance, the more that the bar expected to be the shortest is longer than the real shortest in the solution, the more error that the solution obtains. Simulation errors result in higher error values too.</li>
+				<li><u>get_XY.m:</u> Simulation core. This function is responsible for decoding a parameter vector, simulating the corresponding mechanism, and keeping track of the path that it follows. It takes into account if the target mechanism the type of simulation requirements by receiving as input the problem optimization context structure as well as the parameter vector. The corresponding path is returned as a result. No feasibility checks are performed, so the input mechanism definition is expected to be valid. This function is mainly used in the "safe" zone of the objective functions "armored_obj_func.m" and "light_obj_func.m" (after checking the constraints). It is also called to get the path associated with the final result at "PostProcessResult.m"</li>
+				<li><u>getKBarRelations.m:</u> Auxiliary function that encapsulates the computation of five different relations between the main four bars of mechanisms. For instance, the first one is equal to the length the first bar divided by the second one. It is mainly used by "get_XY.m" and by "premoving.m" the kinematics analysis.</li>
+				<li><u>GetShapeVector.m:</u> Function that computes the NSDV vector to describe an input polygon. It is able to encode the path of an input simple polygon (either convex or concave) of N vertices in a 2N vector. Even positions have the side lengths divided by the longest one. Odd positions contain interior angles divided by 360<span>&#176;</span>. The description starts at the longest side and goes counterclock-wise. If there are more sides with the same longest side, the method can be requested to find that which results in the highest sequence (needed for robust shape-comparison). This function is mainly used to compute the NSDV error, which is needed at the objective function (as well as to launch optimization, i.e., "Optimize.m")</li>
+				<li><u>getTheta3.m:</u> Auxiliary function that encapsulates the computation between the relations among those of the bar lengths and &theta;<sub>2</sub>. It is mainly used by "get_XY.m" and by "premoving.m" the kinematics analysis.</li>
+				<li><u>IsClockWiselyOrdered.m:</u> Auxiliary function that serves to detect if an input simple polygon is decribed clock-wise or not by applying the <a href="https://en.wikipedia.org/wiki/Shoelace_formula">Shoelace formula</a>. It is first required by "GetShapeVector.m" to process the input. It is also used by "Optimize.m" to store the orientation the desired path and compare candidate solutions with that, which is checked at the cost function "armored_obj_func.m".</li>
+				<li><u>light_obj_func.m:</u> Objective function used by FMC whenever it is provided with an initial point. Like "armored_obj_func.m:", it gets as input the candidate solution, i.e., a vector of parameters, and a structure defining the optimization context, i.e., problem type, search bounds... The function will also compute either the absolute or the NSDV error depending on the problem context. However, it is not aimed at handling heavily degenerated solutions or accurately adjusting error metrics depending on constraint violation.</li>
+				<li><u>LoadOptimNames.m:</u> Function that registers the names used by the structs shared among components, both for inputs and results. For example, it contains the name that a struct with the configuration of FMC will have. This function is hence used by "Optimize.m" and "PostProcessResult.m" as well as by the GUI module.</li>
+				<li><u>normalized_L.m:</u> Auxiliary function that computes the normalized perimeter of an input path. It serves to re-scale mechanisms that have been designed through scale-independent comparison criteria, such as NSDV error. Otherwise, results might violate size constraints despite perfeclt replicating the desired path. This function is hence called by both objective functions, i.e., "armored_obj_func.m" and "light_obj_func.m", as well as by "Transform.m" and "Optimize.m", which saves the scale of the desired path so that it does not have to be recomputed throughout optimization.</li>
+				<li><u>Optimize.m:</u> Function that encapsulates the creation of an optimization context (type of problem, bounds, target angles...) and lanunches over it every available optimizer for which there is an input configuration struct. The latter process is mainly divided into two types of strategies: FMC and an external population-based method, which implies adding to the path the sub-folder of the required module in "./Optimizers/". Both ways natively support multiple restarts, timing and in-method best-solution selection. This function can be called from the console to launch an optimization process, as long as its parameters are manually passed with the naming convention for configuring the optimizers. However, the recommended use is to call it throught the GUI. 
+				<br><br>
+				Figure 3 shows the contents of the folder "Optimizers", which is directly linked to the actions of this function. As introduced, every of the optimizers is a general-purpose stand-alone method that can be used for any different optimization purpose. They are arranged as follows:
+				<ol>
+					<li><u>DE/DifferentialEvolution.m:</u> Compact Matlab implementation of Differential Evolution including binomial mutation with rand and best flavours, 1 to N differential vectors and either static F, or per-generation and per-vector dithering. Done according to [3] and <a href="https://www1.icsi.berkeley.edu/~storn/code.html">Differential Evolution Homepage</a>.</li>
+					<li><u>MUMSA/MUMSA.m:</u> Compact Matlab implementation of Málaga University Mechanism Synthesis Algorithm according to [4].</li>
+					<li><u>TLBOSearch/TLBOSearch.m:</u> Compact Matlab implementation Teaching-Learning-based Optimization according to [2] and <a href="https://sites.google.com/site/tlborao/">TLBO Homepage</a>.</li>
+				</ol>
+				<div class="figure">
+					<br><br>
+					<img src="img\SALAR_Optimizers.png" alt="SALAR optimizers" title="Sub-folder with the SALAR stochastic optimizers" width="20%" style="min-width: 100px; border: 1px solid;">
+					<br><br>
+					<b>Figure 3.-</b> Contents of the folder "./Optimizers".
+					<br><br>
+				</div>
+				</li>
+				<li><u>PostProcessResult.m:</u> This function is designed for reading the output generated by "Optimize.m", look for the best solution among all the candidates, and generate a log for the whole process. It also includes the appropriate calls to "Transform.m" in order to decode any result achieved by using NSDV as the error criterion, and it detects if &theta; angles must be updated. The referred log is always saved, but the method might decide not to return any overall solution if its search did not find any feasible one. Again, this function can be manually called through the Matlab console. However, its recommended use is through the GUI.</li>
+				<li><u>premoving.m:</u> Auxiliary function for the kinematics simulation of an input mechanism. It returns a table with the linkage positions, velocities and accelerations in each time step of the simulation. This function is aimed to be used through the GUI.</li>
+				<li><u>Sequence.m:</u> Function that checks if a vector of &theta; angles followed by a candidate mechanism are sequentially ordered, which must be studied to check the feasibility of solutions. It is hence called at both objective functions, i.e., "armored_obj_func.m" and "light_obj_func.m", when the problem type is non-prescribed.</li>
+				<li><u>traceCXY.m:</u> Auxiliary function that computes the coordinates of the coupler point of the mechanism defined by the length of the shortest bar, &theta;<sub>2</sub>, &theta;<sub>3</sub>... It is called by "get_XY.m" and some parts of the GUI related to plotting.</li>
+				<li><u>Transform.m:</u> Function that is responsible for adapting the mechanism obtained by a shape-oriented method, i.e., NSDV error, which is independent of scale, rotation and translation, so that the final mechanism fulfill the problem requirements. It is called by "PostProcessResults.m"</li>
+			</ol>
+			<p>
+				The file "MechanismSynth.mlapp" (MATLAB App designer file) contains the program GUI, i.e., it is what users will call "SALAR". It can be either run or edited through the App Designer shipped with MATLAB, which is shown in Figure 4. The code of the GUI can be classified into 3 categories: self-generated, callbacks and auxiliary functions. The first gruop is provided by Matlab to translate the options adjusted through the graphical window editor into code. It is read-only and will be ignored in this description. The other two groups are summarized below.
+			</p>
+			<div class="figure">
+				<img src="img\SALAR_AppDesigner.png" alt="SALAR in App Designer" title="MechanismSynth.mlapp loaded in App Designer" width="75%" style="min-width: 600px; border: 1px solid;">
+				<br><br>
+				<b>Figure 4.-</b> "MechanismSynth.mlapp" loaded in App Designer.
+			</div>
+			<p>
+				There are 19 callbacks, which are used to handle events. However, the last one, "updateAppLayout", is self-generated to support the type of window selected, which is responsive with 2 panels. The 18 remaining are mentioned in the following list, sorted in order of appearance in the code:
+			</p>
+			<ol>
+				<li><u>startupFcn:</u> Function that is called when the GUI is loading. It prepares some components by adding special characters to their labels, registering their ID's, resizing tables, and loading the set of names linked to optimization.</li>
+				<li><u>SetupNpointsEditFieldValueChanged:</u> Function called when the text field containing the number of points in the desired path changes. It reshape the table of coordinates appropriately.</li>
+				<li><u>SetupFixtoOriginCheckBoxValueChanged:</u> Function called when the checkbox that indicates if the path is fixed to origin changes. It fixes the optimization cost criterion to "Absolute" because NSDV cannot ensure that the constraints of position are fulfilled.</li>
+				<li><u>SetupResetButtonPushed:</u> Function linked to the Reset button of the problem setup zone. It sets the components involved to their default values.</li>
+				<li><u>SetupPreviewButtonPushed:</u> Function linked to the Preview button of the problem setup zone. It reads the input coordinates of the desired path to preliminarily plot it in the results zone.</li>
+				<li><u>OptimResetButtonPushed:</u> Function linked to the Reset button of the optimization setup zone. It sets the components involved to their default values.</li>
+				<li><u>OptimUseFMinConCheckBoxValueChanged:</u> Function linked to the check box that enables FMC (which might be deactivated at start, through). It launches the update of the label listing all the optimizers that would be launched.</li>
+				<li><u>OptimUseTLBOCheckBoxValueChanged:</u>  Function linked to the check box that enables TLBO. It launches the update of the label listing all the optimizers that would be launched.</li>
+				<li><u>OptimUseMUMSACheckBoxValueChanged:</u> Function linked to the check box that enables MUMSA. It launches the update of the label listing all the optimizers that would be launched.</li>
+				<li><u>OptimUseDECheckBoxValueChanged:</u> Function linked to the check box that enables DE. It launches the update of the label listing all the optimizers that would be launched.</li>
+				<li><u>OptimDEFEditFieldValueChanged:</u> Function linked to changes in the edit field of F parameter for DE. It analyzes negative values to check that they are either -1 or -2, which are the only allowed to enable per-generation and per-vector dither, respectively.</li>
+				<li><u>OptimizeButtonPushed:</u> Function linked to the optimization button in the so-named section. It reads the configuration of the problem and that of the optimizers, launch the external "Optimize.m" appropriately, and shows the results at the end. While the process is executed, the whole window is blocked.</li>
+				<li><u>ResultsPlotButtonPushed:</u> Function linked to the plot button in the results section. It reads the current result and plots it. However, if the table with the achieved coordinates is empty, the function simulates the current result to fill it. This is useful to evaluate any initial point provided to FMC.</li>
+				<li><u>ResultsKinStartButtonPushed:</u> Function linked to the simulate button, at the analysis tab of the results section. It launches the kinematics simulation.</li>
+				<li><u>ResultsResetButtonPushed:</u> Function linked to the reset button in the results section. It sets all the components involved to their default values.</li>
+				<li><u>ResultsClearCoordsButtonPushed:</u> Function linked to the clear button under the table with the coordinates of the achieved path. It serves to reset the referred table and the coupler curve figure.</li>
+				<li><u>FileSaveMenuSelected:</u> Function linked to the save option in the window menu on top. It launches the process of registering the information in the sections of problem setup, optimization and results to store it in a ".mat" file. Figures are ignored.</li>
+				<li><u>FileLoadMenuSelected:</u> Function linked to the load option in the window menu on top. It launches the process of reading a valid ".mat" file to translate its information to the appropriate controls in the GUI.</li>
+			</ol>
+			<p>
+				Finally, the code of the GUI also contains 23 internal auxiliary functions. Their goal is summarized below, following the same order in which they can be found in list of functions of App Designer:
+			</p>
+			<ol>
+				<li><u>hasToolbox:</u> Function that checks if a certain toolbox is available. It is used at startup to check if FMC can be launched. Generic filtering included.</li>
+				<li><u>parseCheckBox:</u> Function that scans the designated field of an input structure to translate its value to a desired checkbox. Generic filtering included.</li>
+				<li><u>parseDropDown:</u> Function that scans the designated field of an input structure to translate its value to a desired drop-down control. Generic filtering included.</li>
+				<li><u>parseNumberEditField:</u> Function that scans the designated field of an input structure to translate its value to a desired text field. It allows forcing the value to be integer. Generic filtering included.</li>
+				<li><u>parseDoubleTable:</u> Function that scans the designated field of an input structure to translate its values to a desired table. The field is expected to be a double matrix. Generic filtering included.</li>
+				<li><u>parseControlsBlock:</u> Function that receives a pack of controls ID's with an input struct and a set of field names. It calls the corresponding parse function for each one. It is hence a wrapper over the call of the previous functions (excluding "parseDoubleTable") for whenever they can be grouped. For instance, the elements defining the configuration of every optimizer.</li>
+				<li><u>loadProblemDefinitionStruct:</u> Function that processes the reading of the problem definition struct in a previously-saved SALAR's ".mat" file.</li>
+				<li><u>loadOptimizationDefinitionStruct:</u> Function that processes the reading of the optimization definition struct in a previously-saved SALAR's ".mat" file.</li>
+				<li><u>loadResultDefinitionStruct:</u> Function that processes the reading of the results definition struct in a previously-saved SALAR's ".mat" file.</li>
+				<li><u>saveControlsBlock:</u> Function that receives as input a struct name, with the field names, and a list of components. It packs the values of the linked components and appends them to the input struct with the desired name for each field.</li>
+				<li><u>saveProblemDefinitionStruct:</u> Function that saves the problem definition values to a struct.</li>
+				<li><u>saveOptimizationDefinitionStruct:</u> Function that saves the problem definition values to a struct. This is useful both for file saving, and for launching optimization processes.</li>
+				<li><u>saveResultsDefinitionStruct:</u> Function that saves the values in the result section to a struct.</li>
+				<li><u>resetControlsBlock:</u> Function that receives a cell array of controls to be resetted.</li>
+				<li><u>registerOptimFields:</u> Function that stores the ID's of the controls and names linked to optimizers at startup, which allows their later use within generic block-oriented functions.</li>
+				<li><u>updateOptimizationLabel:</u> Function that scans which of the available optimizers are enabled to list their names in the bottom-left corner.</li>
+				<li><u>packDesiredPath:</u> Function that reads the coordinates of the desired path and checks its general suitability (lack of NaN's). It returns the path in a matrix.</li>
+				<li><u>packCurrentResult:</u> Function that reads the result already loaded in SALAR, if any, which is packed into a parameter vector.</li>
+				<li><u>packOptimProblemBounds:</u> Function that scans all the GUI controls to read the optimization bounds for the problem at hand, depending on its type. They are stored in a matrix with a row per variable and 2 columns.</li>
+				<li><u>readCurrentOptimConfig:</u> Function that condensates the configuration of every active optimizer into a single struct before launching an optimization process.</li>
+				<li><u>ShowResult:</u> Function that is in charge of reading the output of the external optimization process and translating the result to the GUI.</li>
+				<li><u>FinalizeSimulationPlot:</u> Function used to plot the final results of a kinematics simulation.</li>
+				<li><u>EnableWindowActions:</u> Function that can either block or unblock all the relevants controls in the SALAR's GUI. It serves to avoid undesired changes while computing as well as to indicate that the tool is still computing.</li>
+			</ol>
+			<p>Finally, it is useful to provide the reader with some tips for reading/understanding the code. First, in UNIX-like systems, the "grep" command is very useful to find where functions are used. Figure 5 shows an example of looking for the use of "get_XY" in all the files of the folder (<i>r</i> option) also indicating the corresponding line numer (<i>n</i> option). Secondly and last, the "MechanismSynth.mlapp" mixes binary parts with code. To manually scan its source code, it is convenient to temporarily copy the "Code" section shown in App Designer to an auxiliary file.</p>
+			<div class="figure">
+				<img src="img\SALAR_GrepExample.png" alt="Grep example" title="Grep example to seek where code is used" width="40%" style="min-width: 150; border: 1px solid;">
+				<br><br>
+				<b>Figure 5.-</b> Using "grep" to seek where some code is used.
+			</div>
+			<h2><u>3.- User guide</u></h2>
+			<p>
+				SALAR can be used from its main GUI, which is the recommended use, or as a Matlab framework by directly calling its internal ".m" functions, which is discouraged. This section summarize the use of the tool from its GUI, which is shown in Figure 5 including different labeled shapes. First, there are 3 circumferences labeled as "A" (blue), "B" (orange) and "C" (green). They indicate the three main zones of the GUI:
+			</p>
+			<ul>
+				<li><u>A:</u> Problem setup region. This is the place to descibre the desired path that the final mechanism under design should replicate.</li>
+				<li><u>B:</u> Optimization setup region. This is the place configure how the mechanism synthesis must be addressed in terms of optimization.</li>
+				<li><u>C:</u> Result region. This is the place to first define the amplitude of each design variable, and to view the values and the movement path achieved after optimization.</li>
+			</ul>
+			<div class="figure">
+				<img src="img\SALAR_GUI_Desc.png" alt="SALAR GUI labeled" title="SALAR's GUI classified" width="55%" style="min-width: 600; border: 1px solid;">
+				<br><br>
+				<b>Figure 6.-</b> GUI of SALAR with its different components and zones labeled.
+			</div>
+			<p>
+				The numbers from 1 to 7 belong to region "A", and have been colored in ligther blue. Their functionality is summarized next:
+			</p>
+			<ul>
+				<li><u>1:</u> Number of points defining the desired path that the final mechanism must replicate. Thus, only integer values are allowed. This value is linked to the number of rows in the table bewlo, which is labeled as "7".</li>
+				<li><u>2:</u> Problem type, i.e., the scope of mechanism synthesis. SALAR is compatible with three types of synthesis problem:
+					<ol>
+						<li><u>Non-prescribed:</u> There does not exist any relationship between the coupler points and the crank angles. Hence, these angles take part into the optimization vector.</li>
+						<li><u>Prescribed timing:</u>  The problem imposes to achieve the coupler points for a given fixed sequence of crank angles. As a consequence, the optimization vector does not include any angle.</li>
+						<li><u>Prescribed timing with free starting angle:</u> The distance traveled by the crank from a coupler point to the next is fixed. However, the starting angle is not defined and takes part into the optimization vector.</li>
+					</ol>
+				</li>
+				<li><u>3:</u> Enable this checkbox when the mechanism that you are trying to design must be anchored to the origin, and its r1 bar has to be horizontal. This means that x<sub>0</sub> = 0, y<sub>0</sub> = 0 and th<sub>0</sub> = 0.</li>
+				<li><u>4:</u> Enable this checkbox when the target path is closed, i.e, the crank bar produces a complete rotation.</li>
+				<li><u>5:</u> This button serves to reset all the controls within the "A" region. Thus, the controls "1", "2", "3", "4" and "7" will recover their default value.</li>
+				<li><u>6:</u> This button will plot the target path whose coordinates should be in the table labeled as "7". The resulting figure will be shown in the control labeled as "15", which is entitled "coupler curve" and is in the result region.</li>
+				<li><u>7:</u> This table must be filled by the user. It has to contain the coordinates of the target path in order, their angles and their optimization range if necessary. The first two columns have to be filled ALWAYS, with the X and Y coordinates of every point, respectively. The third column has to be filled with the corresponding angles of the crack at each point either for i) prescribed timing and prescribed timing with free starting angle (required) or ii) to define a current result of non-prescribed problems (optional). The last two columns contain the lower and upper bound of each angle, and they have to be filled only for non-prescribed timing problems.</li>
+			</ul>
+			<p>
+				The numbers from 8 to 12 belong to region "B", and have been colored in ligther orange. Their functionality is summarized next:
+			</p>
+			<ul>
+				<li>
+					<u>8:</u> Error metric to compare the desired path and the achieved one through the optimization process. There are two options:
+					<ol>
+						<li><u>Absolute:</u> Accumulated squared difference between each component of every pair of coordinates. It is always avaiable.</li>
+						<li><u>NSDV:</u> Euclidean distance between the normalized shape-descriptor vector [5] of the target path and the achieved one. It cannot be used when the "Fixed" option is enabled.</li>
+					</ol>
+				</li>
+				<li><u>9:</u> Seed to use with the default random-number generator of Matlab. This value is randomly assigned at startup, but it can be changed by the user. It defines the infinite sequence of random numbers that will be generated. Thus, the same seed, with the same methods enabled, will produce the same results. The generation of random numbers is mainly used by TLBO, MUMSA and DE. FMC will use it only when it does not start from a current result because its initial points will be randomly generated.</li>
+				<li><u>10:</u> This button will clear all the components in the optimization zone.</li>
+				<li><u>11:</u> This tag refers to the whole sub-section of optimizers, which is the reason why it is surrounded by a vertical square in contrast to the other items. Each parameter is provided with a descriptive tooltip in the GUI. However, Figure 7 summarizes the controls linked tothe four optimizers included. As a general advice, use population-based methods when no initial configuration is known. Once they obtain a valid solution, sharpen it with FMC (global-local hybridization). For population-based methods, larger populations increse the probabilities of achieving a solution, while more cycles tend to improve their final quality. DE and MUMSA usuarlly expect high crossover rates, while the latter usually works with low mutation probabilities. For further information about their meaning, read [5] (or the corresponding paper of each method).</li>
+				<li><u>12:</u> This button will launch, assuming that all the information has been provided, the synthesis process. It is important to higlight that not only the path and angles must be in the problem setup region ("A"), but also the range of every variable of the mechanism at Table "17" (in region "C"). The results will be shown in region "C". They consist of the coordindates of the achieved path in Table "14", the values in the third column in Table "17", the error metrics of the controls "20", "21" and "22", and the log in "23". This button will block all the controls in the windows until the process ends. Take into account that synthesis cannot be interrupted (without the Matlab console), so adjust the computing effort adequately. Optimization might require updating the third column of table "7" (for NSDV resolution and non-prescribed timing). It will warn the user before doing so.</li>
+			</ul>
+			<div class="figure">
+				<img src="img\SALAR_GUI_Optimizers.png" alt="SALAR GUI labeled" title="Parameters of every optimizer in SALAR" width="55%" style="min-width: 600;">
+				<br><br>
+				<b>Figure 7.-</b> Parameters to adjust for each optimizer through the GUI.
+			</div>
+			<p>
+				The numbers from 13 to 23 belong to region "C", and have been colored in ligther green. Their functionality is summarized next:
+			</p>
+			<ul>
+				<li><u>13:</u> This tag refers to the whole sub-section of Kinematics analysis, which is the reason why it is surrounded by a vertical square in contrast to the other items. If any, the current mechanism can be simulated to show how the movement of the crank follows the desired path. While doing so, the tool collects the velocities and accelerations of their points of interest as well as those of all their links. Figure 8 summarizes the controls included in this sub-section.
+				<p>
+					The main display will show an animation with the linkage moving. If the calculation of velocities and accelerations is activated, their corresponding vectors are depicted along with the linkage bars. These vectors, placed at the points of interest, are scaled so they can be fit to the window. The scale factor is indicated on the top of the graphic. When the simulation stops, the coupler curve traced according to the angle interval is plot, along with the desired points.
+				</p>
+				<p>
+					The display for angular velocities will show the angular velocities of both the coupler link (bar number 3) and the rocker link (bar number 4). These velocities are calculated at each simulation time step and are represented with respect to the crank angle for the entire simulation. The velocities are depicted once the simulation stops, as long as this computation is enabled.
+				</p>
+				<p>
+					 The display for angular acceleration will show the the angular accelerations of the coupler link (bar number 3) and the rocker link (bar number 4). These accelerations are calculated at each simulation time step and are represented with respect to the crank angle for the entire simulation. The acceleratins are depicted once the simulation stops, as long as this computation is enabled.
+				</p>
+				<p>
+					Notice that the larger the angular step is, the fewer calculations the simulator performs. By default, the crank rotates counterclockwise. If a crank clockwise motion is required, this value must be negative, and the initial angle must be lower than the final angle. Similarly,  the angular velocity must be positive for counterclockwise simulations, and negative for clockwise crank motion. <b>Angles are always expected and returned in radians by SALAR (both for mechanism synthesis and Kinematics simulations)</b>.
+				</p>
+				</li>
+				<li><u>14:</u> Table which contains the coordinates of the achieved path. In general, it will automatically filled with the best result obtained from the optimization process. However, if a result has been introduced by the user (e.g., to start from it with FMC), its associated table of coordinates can be computed by clicking on the button "18" (when the user answers "OK" to the confirmation request).</li>
+				<li><u>15:</u> Figure which will contain either the preview of the target path (generated by clicking the button "6") or that combined with the achieved path (generated by clikcing the button "18").</li>
+				<li><u>16:</u> Button to reset both the table in "14" and the figure in "15".</li>
+				<li><u>17:</u> Table which serves to define the ranges of every mechanism variable, and to write/obtain the result of optimization. The two first columns are for their lower and upper bounds, respectively. The third column is to write/obtain the result of optimization. It will contain any set of parameter that the user type to start FMC from it, and the final result of optimization will be also shwon there. Thus, take into account that any initial point provided by the user might be overriden (and lost) at the end. Additionally, note that not all the rows of this table have to be filled. The first six rows are always required. The next three are only required for non-fixed problems, and the last one is reserved for problems with prescribed timing and free-starting angle.
+				</li>
+				<li><u>18:</u> Button to plot both the target path and the achieved one in the figure "15". If the table in "14" is empty by the moment of clicking this button (e.g., before optimization), SALAR will ask the user to plot any current result which is already written. The latter aspect, called preliminary plotting, also computes the absolute error between the desired and the achieved paths to provide the user with a preliminary evaluation.</li>
+				<li><u>19:</u> Button to reset all the controls in the results region.</li>
+				<li><u>20:</u> Absolute error, i.e., accumulated squared difference between each component of every pair of coordinates between the target and the achieved paths. It will be filled with the result of optimization, or when the user is trying to preview a result that did not come from optimization.</li>
+				<li><u>21:</u> NSDV error, i.e., Euclidean distance between the normalized shape-descriptor vector [5] between the target and the achieved paths. Filled after optimization.</li>
+				<li><u>22:</u> Turning-Distance error between the target and the achieved paths, i.e., comparison of their corresponding Turning Functions [6] using the Matlab's built-in functions.</li>
+				<li><u>23:</u> Detailed optimization log which will be filled after the so-named process. It will contain, for every enabled method, the raw result (the parameter vector that it returns), its raw value (i.e., that linked to the method selected in the control "8"), the mean value of error for every independent repetition, the corresponding standard deviation and the mean time of each repetition. It ends with the name of the method that found the best result, which will be translated to the GUI (as long as it is good enough). The error values will not vary when using the Absolute error metric. However, they are likely to vary with the transformation process linked to NSDV results.</li>
+			</ul>
+			<div class="figure">
+				<img src="img\SALAR_Kinematics.png" alt="SALAR GUI Kinematics" title="Sub-section for kinematics simulation" width="55%" style="min-width: 600;">
+				<br><br>
+				<b>Figure 8.-</b> Sub-section for kinematics simulation.
+			</div>
+			<p>
+				As can be deduced from the explanation of the tables in the GUI, not all the information is always required. It depends on the problem type. Nevertheless, SALAR will read the appropriate fields even though the user writes unnecesarry information for the problem at hand. Thus, the user is free to use every table to store as much information as required in case it is necessary to swith from one problem type to another different one.
+			</p>
+			<p>
+				Finally, notice that the main window of SALAR has a menu on top. It only has two options: Load and Save file. The first option opens a file selection window in which the user can choose a problem file to be loaded in SALAR. The expected type of file is a Matlab workspace (*.mat). However, it is required to contain three specific structs with particular fields too. Although they can be manually created by studying the requirements, the recommended way is to load only files previously saved with the GUI of the tool. The second option opens a file saving window to define the name of the "*.mat" file that will be created with the contents of the GUI. Once the user has confirmed a name, SALAR writes the configuration of its components to the referred file so that it can be loaded later. No graphic information will be saved.
+			</p>
+			<h2><u>4.- References</u></h2>
+			<ol>
+				<li>M.A. Branch and A. Grace. <i>MATLAB: Optimization Toolbox: User’s Guide</i>. Math Works, 2020.</li>
+				<li>R.V. Rao, V.J. Savsani and D.P. Vakharia. Teaching–learning-based optimization: an optimization method for continuous non-linear large scale problems. <i>Information sciences</i>, 183(1), 1-15, 2012.</li> 
+  				<li>R. Storn and K. Price. Differential evolution–a simple and efficient heuristic for global optimization over continuous spaces. <i>Journal of Global Optimization</i>, 11(4), 341-359, 1997.</li>
+  				<li>J.A. Cabrera, A. Ortiz, F. Nadal and J.J. Castillo. An evolutionary algorithm for path synthesis of mechanisms. <i>Mechanism and Machine Theory</i>, 46(2), 127-141, 2011.</li>
+  				<li>J.L. Torres-Moreno, N.C. Cruz, J.D. Álvarez, J.L. Redondo and A. Giménez-Fernandez. An open-source tool for path generation synthesis of four-bar mechanisms. <i>Mechanism and Machine Theroy</i>, Accepted, 2021.</li>
+  				<li>F. Nadal, J.A. Cabrera, A. Bataller, J.J. Castillo and A. Ortiz. Turning functions in optimal synthesis of mechanisms. <i>Journal of Mechanical Design</i>, 137(6), 2015.</li>
+  			</ol>
+		</div>
+	</body>
+</html>

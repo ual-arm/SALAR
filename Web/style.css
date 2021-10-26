@@ -1,0 +1,30 @@
+div.container{
+	width: 90%;
+	max-width: 1500px;/*Responsive. Tamagno maximo*/
+	box-sizing: border-box;/*Responsive. No desbordar porcentajes*/
+	margin-left: auto;
+	margin-right: auto;
+	border-radius: 5px;
+	box-shadow: #555 3px 5px 15px 0px;
+	padding: 1.5em;
+	margin-top: 2.5em;
+	margin-bottom: 2.5em;
+	overflow: auto;
+	text-align: justify;
+}
+
+div.note{
+	width: 85%;
+	text-align: center;
+	font-size: 14px;
+	margin: auto;
+}
+
+span.warning{
+	background-color: yellow;
+}
+
+div.figure{
+	text-align: center;
+	width: 100%;
+}
