@@ -117,16 +117,7 @@ function [population, popCosts] = RemoveDuplicates(readyCostFunction, population
                 isNew = false;
                 while ~isNew
                     subject = randi([1 numVariables], 1);%Selecting the subject (design variable) to be altered
-                    if rand() > 0.5
-                        mutatedSolution(subject) = mutatedSolution(subject) + (rand()*mutatedSolution(subject));
-                    else
-                        mutatedSolution(subject) = mutatedSolution(subject) - (rand()*mutatedSolution(subject));
-                    end
-                    if mutatedSolution(subject) < bounds(subject, 1)%Checking the limits of the searchspace
-                        mutatedSolution(subject) = bounds(subject, 1);
-                    elseif mutatedSolution(subject) > bounds(subject, 2)
-                        mutatedSolution(subject) = bounds(subject, 2);
-                    end
+                    mutatedSolution(subject) = rand()*( bounds(subject, 2) - bounds(subject, 1)) + bounds(subject, 1); % [0,1] * (max - min) + min
                     if ~ismember(mutatedSolution, population, 'rows')% Is it a real new individual?
                         isNew = true;
                     end
